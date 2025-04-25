@@ -1,6 +1,5 @@
 package com.example.identificacionmascota.Screen
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -23,6 +23,8 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
 
     val listaMascotas = mascotaViewModel.listaMascotas.value
     var mascotaAEditar by remember { mutableStateOf<Mascota?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    var mascotaAEliminar by remember { mutableStateOf<Mascota?>(null) }
 
     Scaffold(
         bottomBar = {
@@ -53,8 +55,8 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                        shape = RoundedCornerShape(24.dp),
+                        elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -65,10 +67,15 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
                                 contentDescription = "Foto de mascota",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(200.dp)
+                                    .height(180.dp)
+                                    .clip(RoundedCornerShape(16.dp))
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Nombre: ${mascota.nombre}")
+                            Text(
+                                text = mascota.nombre,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFF0D47A1)
+                            )
                             Text("Raza: ${mascota.raza}")
                             Text("Tamaño: ${mascota.tamaño}")
                             Text("Edad: ${mascota.edad} años")
@@ -81,7 +88,8 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
                             ) {
                                 Button(
                                     onClick = {
-                                        mascotaViewModel.eliminarMascota(mascota)
+                                        mascotaAEliminar = mascota
+                                        showDialog = true
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                                     modifier = Modifier.padding(end = 12.dp)
@@ -112,6 +120,36 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
             }
         }
 
+
+        if (showDialog && mascotaAEliminar != null) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            mascotaAEliminar?.let {
+                                mascotaViewModel.eliminarMascota(it)
+                            }
+                            showDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0))
+                    ) {
+                        Text("Confirmar", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showDialog = false },
+                    ) {
+                        Text("Cancelar")
+                    }
+                },
+                title = { Text("¿Estás seguro de eliminar esta mascota?") },
+                text = { Text("Esta acción no se puede deshacer.") }
+            )
+        }
+
+
         mascotaAEditar?.let { mascota ->
             EditarMascotaDialog(
                 mascota = mascota,
@@ -124,7 +162,6 @@ fun ScreenB(navController: NavController, mascotaViewModel: MascotaViewModel) {
         }
     }
 }
-
 @Composable
 fun EditarMascotaDialog(
     mascota: Mascota,
@@ -140,18 +177,21 @@ fun EditarMascotaDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            Button(onClick = {
-                onGuardar(
-                    mascota.copy(
-                        nombre = nombre.text,
-                        raza = raza.text,
-                        tamaño = tamaño.text,
-                        edad = edad.text,
-                        fotoUrl = fotoUrl.text
+            Button(
+                onClick = {
+                    onGuardar(
+                        mascota.copy(
+                            nombre = nombre.text,
+                            raza = raza.text,
+                            tamaño = tamaño.text,
+                            edad = edad.text,
+                            fotoUrl = fotoUrl.text
+                        )
                     )
-                )
-            }) {
-                Text("Guardar")
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0)) // Azul
+            ) {
+                Text("Guardar", color = Color.White)
             }
         },
         dismissButton = {
